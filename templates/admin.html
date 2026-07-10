@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>פאנל ניהול | מערכת שמירת תחנות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Assistant:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F14; --panel:#131A24; --panel-raised:#1B2430; --border:#2A3644;
+    --text:#E6EDF3; --muted:#7A8699; --accent:#3AA9FF;
+    --green:#22C55E; --yellow:#F5B301; --red:#EF4444;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:'Assistant',sans-serif;
+    min-height:100vh;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 24px; border-bottom:1px solid var(--border); background:var(--panel);
+    position:sticky; top:0; z-index:10;
+  }
+  header h1{font-family:'Rubik',sans-serif; font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;}
+  header h1::before{content:""; width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); display:inline-block;}
+  header a{color:var(--muted); text-decoration:none; font-size:14px;}
+  header a:hover{color:var(--text);}
+
+  nav.tabs{display:flex; gap:4px; padding:12px 24px 0; background:var(--panel); overflow-x:auto;}
+  nav.tabs button{
+    background:none; border:none; color:var(--muted); font-family:'Rubik',sans-serif;
+    font-size:14px; font-weight:700; padding:12px 16px; cursor:pointer; border-bottom:3px solid transparent;
+    white-space:nowrap;
+  }
+  nav.tabs button.active{color:var(--accent); border-bottom-color:var(--accent);}
+
+  main{padding:24px; max-width:1200px; margin:0 auto;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:20px;}
+  .panel h2{font-family:'Rubik',sans-serif; font-size:16px; margin:0 0 16px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  table{width:100%; border-collapse:collapse; font-size:14px;}
+  th{text-align:right; color:var(--muted); font-weight:600; padding:10px 8px; border-bottom:1px solid var(--border); font-size:13px;}
+  td{padding:10px 8px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  tr:hover td{background:rgba(255,255,255,.02);}
+
+  input, select, textarea{
+    background:var(--panel-raised); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:9px 10px; font-family:'Assistant',sans-serif; font-size:14px;
+  }
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--accent); border-color:var(--accent);}
+  textarea{width:100%; resize:vertical;}
+
+  .btn{
+    background:var(--accent); color:#04121e; border:none; border-radius:8px; padding:9px 14px;
+    font-weight:700; font-size:13px; cursor:pointer; font-family:'Rubik',sans-serif;
+  }
+  .btn:hover{filter:brightness(1.1);}
+  .btn.secondary{background:var(--panel-raised); color:var(--text); border:1px solid var(--border);}
+  .btn.danger{background:var(--red); color:#fff;}
+  .btn.call{background:var(--green); color:#04120a;}
+  .btn.small{padding:6px 10px; font-size:12px;}
+
+  .pill{padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; display:inline-block;}
+  .pill.on-shift{background:rgba(34,197,94,.15); color:var(--green);}
+  .pill.not-started{background:rgba(122,134,153,.15); color:var(--muted);}
+
+  .toggle{position:relative; width:42px; height:24px; display:inline-block;}
+  .toggle input{display:none;}
+  .toggle .slider{position:absolute; inset:0; background:var(--panel-raised); border:1px solid var(--border); border-radius:20px; cursor:pointer; transition:.2s;}
+  .toggle .slider::before{content:""; position:absolute; width:18px; height:18px; border-radius:50%; background:var(--muted); top:2px; right:2px; transition:.2s;}
+  .toggle input:checked + .slider{background:rgba(34,197,94,.25); border-color:var(--green);}
+  .toggle input:checked + .slider::before{background:var(--green); transform:translateX(-18px);}
+
+  .signal{width:12px; height:12px; border-radius:50%; display:inline-block; margin-left:6px;}
+  .signal.green{background:var(--green); box-shadow:0 0 8px var(--green);}
+  .signal.yellow{background:var(--yellow); box-shadow:0 0 8px var(--yellow);}
+  .signal.red{background:var(--red); box-shadow:0 0 8px var(--red);}
+
+  .form-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+  .form-row > *{flex:1; min-width:140px;}
+
+  .track{border-right:2px solid var(--border); padding-right:16px; margin-right:6px;}
+  .track .entry{position:relative; padding:10px 0;}
+  .track .entry::before{content:""; position:absolute; right:-22px; top:16px; width:10px; height:10px; border-radius:50%; background:var(--border);}
+  .track .entry.green::before{background:var(--green); box-shadow:0 0 8px var(--green);}
+  .track .entry.yellow::before{background:var(--yellow); box-shadow:0 0 8px var(--yellow);}
+  .track .entry.red::before{background:var(--red); box-shadow:0 0 8px var(--red);}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .muted{color:var(--muted);}
+  .shift-card{border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:12px; background:var(--panel-raised);}
+  .flex-between{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>מוקד ניהול · שמירת תחנות</h1>
+  <a href="{{ url_for('admin_logout') }}">התנתקות</a>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-view="employees">עובדים</button>
+  <button data-view="stations">תחנות ותדריכים</button>
+  <button data-view="reports">דוחות</button>
+  <button data-view="contacts">אנשי קשר</button>
+  <button data-view="sms">SMS אוטומטי</button>
+</nav>
+
+<main>
+
+  <!-- ===================== עובדים ===================== -->
+  <section id="view-employees" class="view active">
+    <div class="panel">
+      <h2>הוספת עובד</h2>
+      <div class="form-row">
+        <input id="new-emp-number" placeholder="מספר עובד">
+        <input id="new-emp-name" placeholder="שם מלא">
+        <select id="new-emp-role">
+          <option>מאבטח</option>
+          <option>בודק ביטחוני</option>
+          <option>משקיף</option>
+          <option>ראש ענף</option>
+        </select>
+        <input id="new-emp-phone" placeholder="טלפון">
+        <button class="btn" onclick="createEmployee()">הוסף</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>רשימת עובדים</h2>
+      <table>
+        <thead><tr>
+          <th>שם</th><th>מס' עובד</th><th>תפקיד</th><th>טלפון</th>
+          <th>תחנה משובצת</th><th>סטטוס</th><th>SMS</th><th></th>
+        </tr></thead>
+        <tbody id="employees-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== תחנות ===================== -->
+  <section id="view-stations" class="view">
+    <div class="panel">
+      <h2>הוספת תחנה</h2>
+      <div class="form-row">
+        <input id="new-station-name" placeholder="שם תחנה">
+        <button class="btn" onclick="createStation()">הוסף תחנה</button>
+      </div>
+    </div>
+    <div id="stations-list"></div>
+  </section>
+
+  <!-- ===================== דוחות ===================== -->
+  <section id="view-reports" class="view">
+    <div class="panel">
+      <h2>סינון</h2>
+      <div class="form-row">
+        <select id="filter-station"><option value="">כל התחנות</option></select>
+        <input type="date" id="filter-from">
+        <input type="date" id="filter-to">
+        <button class="btn" onclick="loadReports()">סנן</button>
+      </div>
+    </div>
+    <div id="reports-list"></div>
+  </section>
+
+  <!-- ===================== אנשי קשר ===================== -->
+  <section id="view-contacts" class="view">
+    <div class="panel">
+      <h2>הוספת איש קשר</h2>
+      <div class="form-row">
+        <input id="new-contact-name" placeholder="שם (למשל: מוקד תפעולי)">
+        <input id="new-contact-phone" placeholder="טלפון">
+        <label style="display:flex; align-items:center; gap:8px; flex:0;">
+          <input type="checkbox" id="new-contact-emergency" style="width:auto;"> חירום
+        </label>
+        <button class="btn" onclick="createContact()">הוסף</button>
+      </div>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>שם</th><th>טלפון</th><th>חירום</th><th></th></tr></thead>
+        <tbody id="contacts-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== SMS ===================== -->
+  <section id="view-sms" class="view">
+    <div class="panel">
+      <h2>קמפיין SMS חדש</h2>
+      <p class="muted" style="margin-top:-8px; font-size:13px;">
+        ההודעה תישלח אוטומטית לכל עובד במשמרת פעילה בתחנה שנבחרה, כל X שעות, כל עוד ה-SMS פעיל עבורו (ניתן לכבות לעובד ספציפי בטאב עובדים).
+      </p>
+      <div class="form-row">
+        <select id="camp-station"><option value="">כל התחנות</option></select>
+        <input type="number" id="camp-interval" value="2" min="1" style="max-width:100px;"> שעות
+      </div>
+      <textarea id="camp-message" rows="3" placeholder="נוסח ההודעה..."></textarea>
+      <div style="margin-top:10px;"><button class="btn" onclick="createCampaign()">התחל קמפיין</button></div>
+    </div>
+    <div class="panel">
+      <h2>קמפיינים פעילים</h2>
+      <table>
+        <thead><tr><th>תחנה</th><th>הודעה</th><th>תדירות</th><th>סטטוס</th><th></th></tr></thead>
+        <tbody id="campaigns-tbody"></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>לוג שליחות אחרון</h2>
+      <table>
+        <thead><tr><th>עובד</th><th>טלפון</th><th>נשלח</th><th>תוצאה</th></tr></thead>
+        <tbody id="smslog-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const API = ''; // אותו דומיין
+
+// --- ניווט טאבים ---
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    if(btn.dataset.view==='employees') loadEmployees();
+    if(btn.dataset.view==='stations') loadStations();
+    if(btn.dataset.view==='reports') loadReports();
+    if(btn.dataset.view==='contacts') loadContacts();
+    if(btn.dataset.view==='sms') { loadCampaignsView(); loadSmsLog(); }
+  });
+});
+
+async function api(path, opts={}){
+  const res = await fetch(API+path, {credentials:'include', headers:{'Content-Type':'application/json'}, ...opts});
+  return res.json();
+}
+
+// --- עובדים ---
+let stationsCache = [];
+
+async function loadEmployees(){
+  const data = await api('/api/admin/employees');
+  const tbody = document.getElementById('employees-tbody');
+  tbody.innerHTML = '';
+  (data.employees||[]).forEach(e=>{
+    const tr = document.createElement('tr');
+    const stationOptions = stationsCache.map(s=>
+      `<option value="${s.id}" ${e.station && e.station.id===s.id ? 'selected':''}>${s.name}</option>`
+    ).join('');
+    if(e.suspended) tr.style.opacity = '0.5';
+    tr.innerHTML = `
+      <td>${e.name}</td>
+      <td class="mono">${e.employee_number}</td>
+      <td>${e.role}</td>
+      <td class="mono">${e.phone||'-'}</td>
+      <td><select onchange="assignStation('${e.id}', this.value)">
+            <option value="">— לא משובץ —</option>${stationOptions}
+          </select></td>
+      <td><span class="pill ${e.active_shift_id ? 'on-shift':'not-started'}">${e.suspended ? 'מושעה' : e.shift_status}</span></td>
+      <td><label class="toggle"><input type="checkbox" ${e.sms_enabled?'checked':''} onchange="toggleSms('${e.id}', this.checked)"><span class="slider"></span></label></td>
+      <td style="display:flex; gap:6px;">
+        ${e.phone ? `<a class="btn call small" href="tel:${e.phone}">התקשר</a>` : ''}
+        <button class="btn ${e.suspended ? '' : 'danger'} small" onclick="toggleSuspend('${e.id}', ${!e.suspended})">${e.suspended ? 'הפעל מחדש' : 'השעה'}</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function createEmployee(){
+  const body = {
+    employee_number: document.getElementById('new-emp-number').value,
+    name: document.getElementById('new-emp-name').value,
+    role: document.getElementById('new-emp-role').value,
+    phone: document.getElementById('new-emp-phone').value,
+  };
+  if(!body.employee_number || !body.name){ alert('נא למלא מספר עובד ושם מלא'); return; }
+  await api('/api/admin/employees', {method:'POST', body:JSON.stringify(body)});
+  ['new-emp-number','new-emp-name','new-emp-phone'].forEach(id=>document.getElementById(id).value='');
+  loadEmployees();
+}
+
+async function assignStation(empId, stationId){
+  await api(`/api/admin/employees/${empId}`, {method:'PATCH', body:JSON.stringify({assigned_station_id: stationId ? parseInt(stationId) : null})});
+}
+async function toggleSms(empId, checked){
+  await api(`/api/admin/employees/${empId}`, {method:'PATCH', body:JSON.stringify({sms_enabled: checked})});
+}
+async function toggleSuspend(empId, suspend){
+  if(suspend && !confirm('להשעות את העובד? הוא לא יוכל להתחבר לאפליקציה עד שתפעיל אותו מחדש.')) return;
+  await api(`/api/admin/employees/${empId}`, {method:'PATCH', body:JSON.stringify({suspended: suspend})});
+  loadEmployees();
+}
+
+// --- תחנות ---
+async function loadStations(){
+  const data = await api('/api/admin/stations');
+  stationsCache = data.stations || [];
+  const list = document.getElementById('stations-list');
+  list.innerHTML = '';
+  stationsCache.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'panel';
+    div.innerHTML = `
+      <h2>${s.name}</h2>
+      <textarea rows="4" id="briefing-${s.id}">${s.briefing_html||''}</textarea>
+      <div style="margin-top:10px;"><button class="btn" onclick="saveBriefing(${s.id})">שמור תדריך</button></div>`;
+    list.appendChild(div);
+  });
+  // עדכון select-ים תלויי תחנות במסכים אחרים
+  const opts = stationsCache.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('filter-station').innerHTML = '<option value="">כל התחנות</option>'+opts;
+  document.getElementById('camp-station').innerHTML = '<option value="">כל התחנות</option>'+opts;
+}
+async function createStation(){
+  const name = document.getElementById('new-station-name').value;
+  if(!name) return;
+  await api('/api/admin/stations', {method:'POST', body:JSON.stringify({name, briefing_html:'<p></p>'})});
+  document.getElementById('new-station-name').value='';
+  loadStations();
+}
+async function saveBriefing(id){
+  const html = document.getElementById('briefing-'+id).value;
+  await api(`/api/admin/stations/${id}`, {method:'PATCH', body:JSON.stringify({briefing_html: html})});
+  alert('נשמר');
+}
+
+// --- דוחות ---
+async function loadReports(){
+  if(stationsCache.length===0) await loadStations();
+  const station = document.getElementById('filter-station').value;
+  const from = document.getElementById('filter-from').value;
+  const to = document.getElementById('filter-to').value;
+  let q = [];
+  if(station) q.push('station_id='+station);
+  if(from) q.push('date_from='+from);
+  if(to) q.push('date_to='+to);
+  const data = await api('/api/admin/reports'+(q.length?'?'+q.join('&'):''));
+  const list = document.getElementById('reports-list');
+  list.innerHTML = '';
+  (data.shifts||[]).forEach(s=>{
+    const card = document.createElement('div');
+    card.className = 'panel shift-card';
+    const reportsHtml = (s.scan_reports||[]).map(r=>`
+      <div class="entry ${r.status}">
+        <span class="mono">${r.from_time}–${r.to_time}</span>
+        <span class="signal ${r.status}"></span>
+        ${r.notes ? '<div class="muted" style="font-size:13px;">'+escapeHtml(r.notes)+'</div>' : ''}
+        ${r.photo_base64 ? '<img src="'+r.photo_base64+'" style="max-width:120px; border-radius:6px; margin-top:6px;">' : ''}
+      </div>`).join('') || '<div class="muted">אין דוחות סריקה במשמרת זו</div>';
+    card.innerHTML = `
+      <div class="flex-between">
+        <div><strong>${s.employee_name}</strong> · ${s.station_name}</div>
+        <div class="muted mono">${fmt(s.start_time)} ${s.end_time ? '→ '+fmt(s.end_time) : '(פעילה)'}</div>
+      </div>
+      ${s.end_notes ? '<div class="muted" style="margin-top:6px;">הערת סיום: '+escapeHtml(s.end_notes)+'</div>' : ''}
+      <div class="track" style="margin-top:12px;">${reportsHtml}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+function fmt(iso){ if(!iso) return ''; const d = new Date(iso); return d.toLocaleString('he-IL'); }
+function escapeHtml(s){ const d=document.createElement('div'); d.innerText=s; return d.innerHTML; }
+
+// --- אנשי קשר ---
+async function loadContacts(){
+  const data = await api('/api/admin/contacts');
+  const tbody = document.getElementById('contacts-tbody');
+  tbody.innerHTML = '';
+  (data.contacts||[]).forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.name}</td><td class="mono">${c.phone}</td>
+      <td>${c.is_emergency ? '⭐' : ''}</td>
+      <td><button class="btn danger small" onclick="deleteContact(${c.id})">מחק</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+async function createContact(){
+  const body = {
+    name: document.getElementById('new-contact-name').value,
+    phone: document.getElementById('new-contact-phone').value,
+    is_emergency: document.getElementById('new-contact-emergency').checked,
+  };
+  if(!body.name || !body.phone) return;
+  await api('/api/admin/contacts', {method:'POST', body:JSON.stringify(body)});
+  document.getElementById('new-contact-name').value='';
+  document.getElementById('new-contact-phone').value='';
+  document.getElementById('new-contact-emergency').checked=false;
+  loadContacts();
+}
+async function deleteContact(id){
+  if(!confirm('למחוק?')) return;
+  await api('/api/admin/contacts/'+id, {method:'DELETE'});
+  loadContacts();
+}
+
+// --- SMS ---
+async function loadCampaignsView(){
+  if(stationsCache.length===0) await loadStations();
+  const data = await api('/api/admin/campaigns');
+  const tbody = document.getElementById('campaigns-tbody');
+  tbody.innerHTML = '';
+  (data.campaigns||[]).forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.stations ? c.stations.name : 'כל התחנות'}</td>
+      <td style="max-width:280px;">${escapeHtml(c.message)}</td>
+      <td>${c.interval_hours} שעות</td>
+      <td>${c.active ? '<span class="pill on-shift">פעיל</span>' : '<span class="pill not-started">הופסק</span>'}</td>
+      <td>${c.active ? `<button class="btn danger small" onclick="stopCampaign(${c.id})">עצור</button>` : ''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+async function createCampaign(){
+  const body = {
+    station_id: document.getElementById('camp-station').value ? parseInt(document.getElementById('camp-station').value) : null,
+    interval_hours: parseInt(document.getElementById('camp-interval').value) || 2,
+    message: document.getElementById('camp-message').value,
+  };
+  if(!body.message.trim()){ alert('נא להזין נוסח הודעה'); return; }
+  await api('/api/admin/campaigns', {method:'POST', body:JSON.stringify(body)});
+  document.getElementById('camp-message').value='';
+  loadCampaignsView();
+}
+async function stopCampaign(id){
+  await api(`/api/admin/campaigns/${id}/stop`, {method:'POST'});
+  loadCampaignsView();
+}
+async function loadSmsLog(){
+  const data = await api('/api/admin/sms-log');
+  const tbody = document.getElementById('smslog-tbody');
+  tbody.innerHTML = '';
+  (data.log||[]).forEach(l=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>#${l.employee_id}</td><td class="mono">${l.phone||'-'}</td><td class="mono">${fmt(l.sent_at)}</td><td>${l.success ? '✅' : '❌ '+ (l.error||'')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// --- טעינה ראשונית ---
+loadStations().then(loadEmployees);
+</script>
+</body>
+</html>
