@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>כניסת מנהל | מערכת שמירת תחנות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F14; --panel:#131A24; --panel-raised:#1B2430; --border:#2A3644;
+    --text:#E6EDF3; --muted:#7A8699; --accent:#3AA9FF;
+    --green:#22C55E; --yellow:#F5B301; --red:#EF4444;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 0%, #16202c 0%, var(--bg) 60%);
+    font-family:'Assistant',sans-serif; color:var(--text);
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:16px;
+    padding:40px 32px; width:100%; max-width:360px; box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .rail{
+    width:48px; height:4px; background:var(--accent); border-radius:2px; margin-bottom:20px;
+    box-shadow:0 0 12px var(--accent);
+  }
+  h1{font-family:'Rubik',sans-serif; font-weight:800; font-size:22px; margin:0 0 6px;}
+  p.sub{color:var(--muted); margin:0 0 28px; font-size:14px;}
+  label{font-size:13px; color:var(--muted); display:block; margin-bottom:8px;}
+  input{
+    width:100%; padding:14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--panel-raised); color:var(--text); font-size:16px; font-family:'Assistant',sans-serif;
+  }
+  input:focus{outline:2px solid var(--accent); border-color:var(--accent);}
+  button{
+    width:100%; margin-top:20px; padding:14px; border-radius:10px; border:none;
+    background:var(--accent); color:#04121e; font-weight:700; font-size:16px; cursor:pointer;
+    font-family:'Rubik',sans-serif;
+  }
+  button:hover{filter:brightness(1.08);}
+  .err{color:var(--red); font-size:14px; margin-top:14px; text-align:center;}
+</style>
+</head>
+<body>
+  <form class="card" method="POST" action="{{ url_for('admin_login') }}">
+    <div class="rail"></div>
+    <h1>פאנל ניהול</h1>
+    <p class="sub">מערכת שמירת תחנות · אבטחה</p>
+    <label for="password">סיסמת מנהל</label>
+    <input type="password" id="password" name="password" required autofocus>
+    <button type="submit">כניסה</button>
+    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+  </form>
+</body>
+</html>
